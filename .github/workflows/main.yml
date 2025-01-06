@@ -5,95 +5,43 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # Step 3: Set up Java environment
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # Step 4: Install Android Command Line Tools
-      - name: Install Android Command Line Tools
+      - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip -q commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+          sudo apt-get install -y build-essential automake autoconf libtool m4 python3-pip
+          pip install --upgrade pip setuptools wheel
 
-      # Step 5: Accept Android licenses
-      - name: Accept Android licenses
+      - name: Install Buildozer and Dependencies
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          pip install cython
+          pip install buildozer
+          pip install git+https://github.com/kivy/python-for-android.git
 
-      # Step 6: Install required Android SDK packages
-      - name: Install Android SDK packages
+      - name: Initialize Buildozer
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-30" "build-tools;30.0.3" "platform-tools" "ndk;21.4.7075529"
+          buildozer init
 
-      # Step 7: Install Python dependencies
-      - name: Install Python dependencies
+      - name: Fix LibFFI Autogen Issues
         run: |
-          python -m pip install --upgrade pip
-          pip install cython buildozer
+          # Replace obsolete macros in libffi's configure.ac before running autoreconf
+          sed -i 's/AC_CANONICAL_SYSTEM/AC_CANONICAL_HOST/' path/to/libffi/configure.ac
+          sed -i 's/AC_PROG_LIBTOOL/LT_INIT/' path/to/libffi/configure.ac
+          autoreconf --force --install
 
-      # Step 8: Install additional system dependencies
-      - name: Install additional build dependencies
-        run: |
-          sudo apt-get install -y \
-            libssl-dev \
-            libffi-dev \
-            build-essential \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev
-
-      # Step 9: Build the APK
       - name: Build APK
         run: |
-          export ANDROID_NDK=$ANDROID_HOME/ndk/21.4.7075529
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/21.4.7075529
-          buildozer android release
-
-      # Step 10: Upload the APK as an artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: Terminal
-          path: bin/*.apk
-
-      # Step 11: Upload build logs in case of failure
-      - name: Upload build logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: buildozer_logs
-          path: .buildozer/android/platform/build/*.log
+          buildozer android debug
