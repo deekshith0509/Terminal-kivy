@@ -1,4 +1,5 @@
 name: Build APK
+
 on:
   push:
     branches:
@@ -6,44 +7,59 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
+      # Step 3: Set up Java environment
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      # Step 4: Install Android Command Line Tools
       - name: Install Android Command Line Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
-          mkdir -p $HOME/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
-          unzip commandlinetools-linux-7302050_latest.zip
           mkdir -p $HOME/android-sdk/cmdline-tools
-          mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
+          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+
+      # Step 5: Accept Android licenses
       - name: Accept Android licenses
         run: |
-          mkdir -p $HOME/android-sdk/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/android-sdk/licenses/android-sdk-preview-license
-      - name: Install required Android SDK packages
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      # Step 6: Install required Android SDK packages
+      - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --install "platforms;android-30" "build-tools;30.0.3" "platform-tools" --sdk_root=${ANDROID_HOME}
-      - name: Install dependencies
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-30" "build-tools;30.0.3" "platform-tools" "ndk;21.4.7075529"
+
+      # Step 7: Install Python dependencies
+      - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install cython buildozer
+
+      # Step 8: Install additional system dependencies
       - name: Install additional build dependencies
         run: |
           sudo apt-get install -y \
@@ -59,17 +75,25 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
+
+      # Step 9: Build the APK
       - name: Build APK
         run: |
-          yes | buildozer android release
+          export ANDROID_NDK=$ANDROID_HOME/ndk/21.4.7075529
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/21.4.7075529
+          buildozer android release
+
+      # Step 10: Upload the APK as an artifact
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: Terminal
-          path: bin/*
+          path: bin/*.apk
+
+      # Step 11: Upload build logs in case of failure
       - name: Upload build logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_logs
-          path: .buildozer/android/build/*.log
+          path: .buildozer/android/platform/build/*.log
