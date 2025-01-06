@@ -26,16 +26,26 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Cache Buildozer dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
+            ccache \
             git \
             python3-pip \
             python3-dev \
-            libffi-dev \
-            libssl-dev \
+            ffmpeg \
             libsdl2-dev \
             libsdl2-image-dev \
             libsdl2-mixer-dev \
@@ -45,28 +55,30 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev \
+            libgstreamer1.0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
             autoconf \
             automake \
             libtool \
-            pkg-config
+            pkg-config \
+            wget \
+            unzip \
+            zip
 
-      - name: Install buildozer
+      - name: Install buildozer and dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install --upgrade Cython==0.29.33
-          pip install buildozer==1.5.0
-
-      - name: Initialize buildozer
-        run: |
-          buildozer init
-          # Modify buildozer.spec if needed
-          sed -i 's/^android.sdk = .*/android.sdk = 33/g' buildozer.spec
-          sed -i 's/^android.ndk = .*/android.ndk = 25c/g' buildozer.spec
-          sed -i 's/^android.api = .*/android.api = 33/g' buildozer.spec
+          pip install --upgrade buildozer==1.5.0
+          pip install --upgrade virtualenv
 
       - name: Build APK
         run: |
-          buildozer android debug
+          buildozer android clean
+          buildozer -v android debug
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
@@ -74,9 +86,11 @@ jobs:
           name: Terminal
           path: bin/*.apk
 
-      - name: Upload build logs
+      - name: Upload build logs on failure
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_logs
-          path: .buildozer/android/build/*.log
+          path: |
+            .buildozer/android/build/*.log
+            .buildozer/android/platform/build-arm64-v8a/build/*.log
