@@ -14,7 +14,7 @@ android.archs = arm64-v8a
 android.release_artifact = apk
 android.accept_sdk_license = True
 android.api = 33
-android.ndk = 25b
+android.ndk = 25c
 android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 # Versioning
 version = 1.0
