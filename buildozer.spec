@@ -23,7 +23,7 @@ version = 1.0
 debug = 1
 
 [buildozer]
-log_level = 2
+log_level = 1
 warn_on_root = 1
 
 android.allow_backup = True
