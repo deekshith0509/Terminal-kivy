@@ -69,17 +69,17 @@ jobs:
             libtool \
             autoconf \
             automake \
-            m4
+            m4 \
+            autoconf-archive
 
       - name: Ensure the `LT_SYS_SYMBOL_USCORE` macro is available
         run: |
           echo "m4_pattern_allow([LT_SYS_SYMBOL_USCORE])" >> configure.ac
           autoconf --force
 
-      - name: Update Autoconf macros
+      - name: Regenerate configure.ac and Makefile
         run: |
-          sudo apt-get install -y autoconf-archive
-          autoreconf -vfi
+          autoreconf --install --force
 
       - name: Build APK
         run: |
