@@ -1,5 +1,4 @@
-name: Build Android App with Kivy
-
+name: Build APK
 on:
   push:
     branches:
@@ -7,68 +6,94 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          libffi-dev \
-          libssl-dev \
-          python3-dev \
-          python3-pip \
-          libtool \
-          autoconf \
-          automake \
-          cmake \
-          unzip \
-          wget \
-          curl \
-          libncurses5 \
-          libncurses5-dev \
-          zlib1g-dev \
-          liblzma-dev \
-          pkg-config \
-          python3-setuptools \
-          libreadline-dev
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Install Android SDK
-      run: |
-        mkdir -p $HOME/Android/Sdk
-        echo "y" | sdkmanager --install "platform-tools" "platforms;android-21" "build-tools;30.0.3" "ndk;21.3.6528147" "system-images;android-21;default;armeabi-v7a"
-        echo "ANDROID_HOME=$HOME/Android/Sdk" >> $GITHUB_ENV
-        echo "ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/21.3.6528147" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/Android/Sdk/tools:$HOME/Android/Sdk/tools/bin:$HOME/Android/Sdk/platform-tools" >> $GITHUB_ENV
+      - name: Install Android Command Line Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          mkdir -p $HOME/android-sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
+          unzip commandlinetools-linux-7302050_latest.zip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
 
-    - name: Install Buildozer
-      run: |
-        pip install buildozer
+      - name: Accept Android licenses
+        run: |
+          mkdir -p $HOME/android-sdk/licenses
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/android-sdk/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/android-sdk/licenses/android-sdk-preview-license
 
-    - name: Run Buildozer to build Android app
-      run: |
-        cd $GITHUB_WORKSPACE
-        buildozer android debug
+      - name: Install required Android SDK packages
+        run: |
+          yes | sdkmanager --install "platforms;android-30" "build-tools;30.0.3" "platform-tools" --sdk_root=${ANDROID_HOME}
 
-    - name: Upload build artifacts
-      if: success()
-      uses: actions/upload-artifact@v2
-      with:
-        name: android-debug-apk
-        path: ./bin/*.apk
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install cython buildozer
 
-    - name: Clean up
-      run: |
-        sudo apt-get autoremove -y
-        sudo apt-get clean
+      - name: Install additional build dependencies
+        run: |
+          sudo apt-get install -y \
+            libssl-dev \
+            libffi-dev \
+            build-essential \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libtool \
+            autoconf \
+            automake \
+            m4
+
+      - name: Ensure the `LT_SYS_SYMBOL_USCORE` macro is available
+        run: |
+          echo "m4_pattern_allow([LT_SYS_SYMBOL_USCORE])" >> configure.ac
+          autoconf --force
+
+      - name: Update Autoconf macros
+        run: |
+          sudo apt-get install -y autoconf-archive
+          autoreconf -vfi
+
+      - name: Build APK
+        run: |
+          yes | buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: Terminal
+          path: bin/*
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: buildozer_logs
+          path: .buildozer/android/build/*.log
