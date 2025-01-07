@@ -1,11 +1,11 @@
 [app]
 title = Terminal Emulator
-package.name = kivy
-package.domain = terminal
+package.name = terminal
+package.domain = com.kivy
 source.main = main.py
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,dm,ttf
-requirements = python3,kivy,plyer
+source.include_exts = py,png,jpg,kv,atlas,dm
+requirements = python3,kivy
 orientation = portrait 
 icon.filename = icon.png
 source.include_patterns = bin/*
@@ -19,11 +19,9 @@ android.accept_sdk_license = True
 android.api = 33
 android.minapi = 21
 android.sdk = 33
-android.ndk = 25c
+android.ndk = 25b
 android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 android.allow_backup = True
-android.logcat_filters = *:S python:D
-android.setup_kwargs = --ignore-setup-py
 
 # Debug settings
 debug = 1
