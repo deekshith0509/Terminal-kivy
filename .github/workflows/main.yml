@@ -72,12 +72,15 @@ jobs:
             m4 \
             autoconf-archive
 
-      - name: Ensure the `LT_SYS_SYMBOL_USCORE` macro is available
+      - name: Ensure `configure.ac` is set up correctly
         run: |
-          echo "m4_pattern_allow([LT_SYS_SYMBOL_USCORE])" >> configure.ac
-          autoconf --force
+          echo "AC_INIT([MyProject], [1.0], [your-email@example.com])" > configure.ac
+          echo "AM_INIT_AUTOMAKE" >> configure.ac
+          echo "AC_PROG_CC" >> configure.ac
+          echo "AC_CONFIG_FILES([Makefile])" >> configure.ac
+          echo "AC_OUTPUT" >> configure.ac
 
-      - name: Regenerate configure.ac and Makefile
+      - name: Regenerate configure script
         run: |
           autoreconf --install --force
 
