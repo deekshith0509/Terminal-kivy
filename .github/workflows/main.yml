@@ -1,26 +1,21 @@
 name: Build APK
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
+          
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -71,7 +66,8 @@ jobs:
             autoconf \
             automake \
             m4 \
-            autoconf-archive
+            autoconf-archive \
+            pkg-config
 
       - name: Create required files
         run: |
@@ -79,11 +75,26 @@ jobs:
 
       - name: Setup configure.ac
         run: |
-          echo "AC_INIT([MyProject], [1.0], [your-email@example.com])" > configure.ac
-          echo "AM_INIT_AUTOMAKE([-Wall -Werror foreign])" >> configure.ac
-          echo "AC_PROG_CC" >> configure.ac
-          echo "AC_CONFIG_FILES([Makefile])" >> configure.ac
-          echo "AC_OUTPUT" >> configure.ac
+          cat > configure.ac << 'EOL'
+          AC_INIT([MyProject], [1.0], [your-email@example.com])
+          AC_CONFIG_AUX_DIR([build-aux])
+          AC_CONFIG_MACRO_DIRS([m4])
+          AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+          LT_INIT
+          LT_SYS_SYMBOL_USCORE
+          AC_PROG_CC
+          AC_CONFIG_FILES([Makefile])
+          AC_OUTPUT
+          EOL
+
+      - name: Setup build directories
+        run: |
+          mkdir -p build-aux m4
+          
+      - name: Create Makefile.am
+        run: |
+          echo "bin_PROGRAMS = my_program" > Makefile.am
+          echo "my_program_SOURCES = main.c" >> Makefile.am
 
       - name: Create main.c
         run: |
@@ -93,14 +104,9 @@ jobs:
               return 0;
           }' > main.c
 
-      - name: Create Makefile.am
-        run: |
-          echo "bin_PROGRAMS = my_program" > Makefile.am
-          echo "my_program_SOURCES = main.c" >> Makefile.am
-
       - name: Regenerate configure script
         run: |
-          autoreconf --install --force
+          autoreconf -fiv
 
       - name: Build APK
         run: |
