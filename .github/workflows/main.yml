@@ -1,7 +1,3 @@
-
-Run details
-Workflow file for this run
-.github/workflows/main.yml at 877de5d
 name: Build APK
 on:
   push:
