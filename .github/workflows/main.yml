@@ -80,6 +80,11 @@ jobs:
           echo "AC_CONFIG_FILES([Makefile])" >> configure.ac
           echo "AC_OUTPUT" >> configure.ac
 
+      - name: Create `Makefile.am`
+        run: |
+          echo "bin_PROGRAMS = my_program" > Makefile.am
+          echo "my_program_SOURCES = main.c" >> Makefile.am
+
       - name: Regenerate configure script
         run: |
           autoreconf --install --force
