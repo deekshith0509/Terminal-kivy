@@ -63,8 +63,7 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
-            sudo update-alternatives --config gcc
-            sudo update-alternatives --config g++
+
       - name: Build APK
         run: |
           buildozer android clean
