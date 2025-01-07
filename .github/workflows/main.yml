@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -71,26 +72,28 @@ jobs:
             automake \
             m4 \
             autoconf-archive
+
       - name: Create required files
         run: |
           touch AUTHORS ChangeLog NEWS README
-          
-      - name: Update configure.ac
-        run: |
-          echo 'AC_INIT([MyProject], [1.0])' > configure.ac
-          echo 'AM_INIT_AUTOMAKE([-Wall -Werror foreign])' >> configure.ac
-          echo 'AC_PROG_CC' >> configure.ac
-          echo 'AC_CONFIG_FILES([Makefile])' >> configure.ac
-          echo 'AC_OUTPUT' >> configure.ac
-      - name: Ensure `configure.ac` is set up correctly
+
+      - name: Setup configure.ac
         run: |
           echo "AC_INIT([MyProject], [1.0], [your-email@example.com])" > configure.ac
-          echo "AM_INIT_AUTOMAKE" >> configure.ac
+          echo "AM_INIT_AUTOMAKE([-Wall -Werror foreign])" >> configure.ac
           echo "AC_PROG_CC" >> configure.ac
           echo "AC_CONFIG_FILES([Makefile])" >> configure.ac
           echo "AC_OUTPUT" >> configure.ac
 
-      - name: Create `Makefile.am`
+      - name: Create main.c
+        run: |
+          echo '#include <stdio.h>
+          int main() {
+              printf("Hello, World!\n");
+              return 0;
+          }' > main.c
+
+      - name: Create Makefile.am
         run: |
           echo "bin_PROGRAMS = my_program" > Makefile.am
           echo "my_program_SOURCES = main.c" >> Makefile.am
