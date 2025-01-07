@@ -55,15 +55,20 @@ jobs:
             libltdl-dev \
             libtool \
             libsdl2-mixer-dev \
+            gcc \
+            g++ \
             libsdl2-ttf-dev \
             libportmidi-dev \
             libswscale-dev \
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
+            sudo update-alternatives --config gcc
+            sudo update-alternatives --config g++
       - name: Build APK
         run: |
-          yes | buildozer android release
+          buildozer android clean
+          yes | buildozer -v android debug
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
