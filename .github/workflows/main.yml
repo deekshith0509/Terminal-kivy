@@ -64,10 +64,11 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
-      - name: Build APK
+      - name: Build APK with custom CFLAGS
         run: |
-          make install CFLAGS="-ferror-limit=0"
-          yes | buildozer -v android debug
+          export CFLAGS="-ferror-limit=0"
+          export LDFLAGS="-ferror-limit=0"
+          buildozer -v android debug
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
