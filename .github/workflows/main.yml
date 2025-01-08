@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
-          python-version: '3.11'
+          python-version: '3.10'
       - name: Set up Java
         uses: actions/setup-java@v4.6.0
         with:
@@ -23,8 +23,8 @@ jobs:
           java-version: '17'
       - name: Install Android Command Line Tools
         run: |
-          sudo apt-get update
-          sudo apt-get upgrade
+          sudo apt-get update -y
+          sudo apt-get upgrade -y
           sudo apt-get install -y wget unzip
           mkdir -p $HOME/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install cython buildozer
+          pip install cython buildozer == 1.2.0
       - name: Install additional build dependencies
         run: |
           sudo apt-get install -y \
@@ -71,6 +71,9 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
+            sudo apt-get install software-properties-common
+            sudo add-apt-repository ppa:jonathonf/gcc
+            sudo apt-get install gcc-9
       - name: Build APK
         run: |
           buildozer -v android debug
