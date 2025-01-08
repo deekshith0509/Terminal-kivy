@@ -18,7 +18,7 @@ android.accept_sdk_license = True
 android.api = 33
 android.sdk = 33
 android.minapi = 21
-android.ndk = 25
+android.ndk = r27c
 android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 android.allow_backup = True
 
