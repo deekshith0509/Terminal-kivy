@@ -13,13 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Install Android SDK and NDK
+      - name: Install Android SDK Command-Line Tools
         run: |
           mkdir -p $HOME/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip -O cmdline-tools.zip
@@ -27,15 +21,17 @@ jobs:
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip -O ndk.zip
-          unzip ndk.zip -d $HOME/android-sdk/ndk
-          echo "ANDROID_NDK_HOME=$HOME/android-sdk/ndk/android-ndk-r25b" >> $GITHUB_ENV
+          source $GITHUB_ENV
+          sdkmanager --list
+      
+      - name: Install Required SDK Components
+        run: |
           yes | sdkmanager --install "platforms;android-30" "build-tools;30.0.3" --sdk_root=$ANDROID_HOME
       
-      - name: Install dependencies
+      - name: Install Python Dependencies
         run: |
           pip install --upgrade pip
-          pip install cython buildozer
+          pip install buildozer cython
       
       - name: Build APK
         run: |
@@ -47,9 +43,9 @@ jobs:
           name: APK
           path: bin/*.apk
       
-      - name: Upload build logs
+      - name: Upload Build Logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: build_logs
+          name: Build Logs
           path: .buildozer/android/platform/*.log
