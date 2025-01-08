@@ -19,6 +19,7 @@ android.api = 33
 android.sdk = 33
 android.minapi = 21
 android.ndk = r25b
+android.ndk_path = $HOME/android-sdk/ndk/android-ndk-r25b
 android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 android.allow_backup = True
 
