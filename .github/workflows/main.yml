@@ -13,11 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5.3.0
         with:
-          python-version: '3.9'
+          python-version: '3.12'
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.6.0
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -71,10 +71,8 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev
-      - name: Build APK with custom CFLAGS
+      - name: Build APK
         run: |
-          export CFLAGS="-ferror-limit=0"
-          export LDFLAGS="-ferror-limit=0"
           buildozer -v android debug
       - name: Upload APK
         uses: actions/upload-artifact@v3
