@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install cython buildozer == 1.2.0
+          pip install cython buildozer
       - name: Install additional build dependencies
         run: |
           sudo apt-get install -y \
@@ -63,8 +63,6 @@ jobs:
             libltdl-dev \
             libtool \
             libsdl2-mixer-dev \
-            gcc \
-            g++ \
             libsdl2-ttf-dev \
             libportmidi-dev \
             libswscale-dev \
