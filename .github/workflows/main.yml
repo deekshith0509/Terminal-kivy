@@ -60,7 +60,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install cython buildozer
+          pip install cython
+          pip install python-for-android
+          pip install buildozer
 
       - name: Install additional build dependencies
         run: |
@@ -94,9 +96,23 @@ jobs:
           sudo apt-get install -y gcc-9
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60
 
+      - name: Initialize buildozer
+        run: |
+          buildozer init
+          if [ ! -f buildozer.spec ]; then
+            echo "Failed to create buildozer.spec"
+            exit 1
+          fi
+
+      - name: Setup python-for-android
+        run: |
+          mkdir -p .buildozer/android/platform
+          git clone https://github.com/kivy/python-for-android.git .buildozer/android/platform/python-for-android
+          cd .buildozer/android/platform/python-for-android
+          python setup.py install
+
       - name: Build APK
         run: |
-          buildozer android clean
           buildozer -v android debug
 
       - name: Upload APK
