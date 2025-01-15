@@ -14,24 +14,16 @@ version = 1.0
 android.release_artifact = apk
 android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 source.include_patterns = bin/*
-
-log_level = 2
-
 # Use a compatible Android API level
 android.api = 33
 android.minapi = 21
-
 # Use specific NDK version
 android.ndk = 25b
-
-# Use specific build tools version
-android.build_tools = 33.0.2
-
 # Specify python-for-android version
-p4a.branch = master
+p4a.branch = develop
 android.sdk = 33
 android.accept_sdk_license = True
-android.arch = arm64-v8a
+android.archs = arm64-v8a
 
 # Add debug keystore settings
 android.keystore = debug.keystore
