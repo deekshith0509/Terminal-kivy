@@ -12,13 +12,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
-          python-version: '3.9'
+          python-version: '3.10'  # Changed to Python 3.10
 
       - name: Set up Java
         uses: actions/setup-java@v4.6.0
@@ -26,7 +25,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Cache Python dependencies
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -35,51 +33,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Cache Buildozer global directory
-      - name: Cache Buildozer global
-        uses: actions/cache@v3
-        with:
-          path: ~/.buildozer
-          key: ${{ runner.os }}-buildozer-global-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-global-
-
-      # Cache Buildozer project directory
-      - name: Cache Buildozer project
-        uses: actions/cache@v3
-        with:
-          path: .buildozer
-          key: ${{ runner.os }}-buildozer-project-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-project-
-
-      # Cache Android SDK and NDK
-      - name: Cache Android SDK and NDK
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${GITHUB_WORKSPACE}/android-sdk
-            ${GITHUB_WORKSPACE}/android-ndk
-          key: ${{ runner.os }}-android-sdk-ndk-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-android-sdk-ndk-
-
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install cython
-          pip install python-for-android
-          pip install buildozer
-          pip install kivy
+          python -m pip install --upgrade pip
+          pip install buildozer==1.5.0  # Specify buildozer version
+          pip install cython==0.29.33   # Specify Cython version
+          pip install kivy==2.2.1       # Specify Kivy version
 
-      - name: Install build dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             python3-pip \
             build-essential \
             git \
-            python3 \
             python3-dev \
             ffmpeg \
             libsdl2-dev \
@@ -91,7 +58,9 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev \
-            libltdl-dev \
+            libgstreamer1.0-dev \
+            gstreamer1.0-plugins-{bad,base,good,ugly} \
+            gstreamer1.0-{tools,x} \
             libffi-dev \
             libssl-dev \
             autoconf \
@@ -99,67 +68,16 @@ jobs:
             libtool \
             pkg-config
 
-      - name: Set up Android SDK
-        if: steps.cache-android.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ${GITHUB_WORKSPACE}/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
-          unzip commandlinetools-linux-7302050_latest.zip
-          mkdir -p ${GITHUB_WORKSPACE}/android-sdk/cmdline-tools
-          mv cmdline-tools ${GITHUB_WORKSPACE}/android-sdk/cmdline-tools/latest
-          echo "ANDROID_HOME=${GITHUB_WORKSPACE}/android-sdk" >> $GITHUB_ENV
-          echo "PATH=${GITHUB_WORKSPACE}/android-sdk/cmdline-tools/latest/bin:${GITHUB_WORKSPACE}/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-
-      - name: Install Android SDK packages
-        if: steps.cache-android.outputs.cache-hit != 'true'
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-
-      - name: Download and setup Android NDK
-        if: steps.cache-android.outputs.cache-hit != 'true'
-        run: |
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip android-ndk-r25b-linux.zip
-          mv android-ndk-r25b ${GITHUB_WORKSPACE}/android-ndk
-          echo "ANDROID_NDK_HOME=${GITHUB_WORKSPACE}/android-ndk" >> $GITHUB_ENV
-          echo "PATH=${ANDROID_NDK_HOME}:$PATH" >> $GITHUB_ENV
-
-      - name: Create debug keystore
-        run: |
-          mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
-
-      - name: Set environment variables
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=${GITHUB_WORKSPACE}/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=${GITHUB_WORKSPACE}/android-ndk" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=${GITHUB_WORKSPACE}/android-ndk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_HOME=${GITHUB_WORKSPACE}/android-sdk" >> $GITHUB_ENV
-
-      - name: Setup python-for-android
-        run: |
-          if [ ! -d .buildozer/android/platform/python-for-android ]; then
-            mkdir -p .buildozer/android/platform
-            git clone https://github.com/kivy/python-for-android.git .buildozer/android/platform/python-for-android
-            cd .buildozer/android/platform/python-for-android
-            python setup.py install
-          fi
-
       - name: Build APK
+        run: |
+          buildozer android debug
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-        run: |
-          export PATH=$PATH:${GITHUB_WORKSPACE}/android-sdk/platform-tools
-          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: APK
+          name: app-debug
           path: bin/*.apk
 
       - name: Upload logs on failure
@@ -167,6 +85,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_logs
-          path: |
-            .buildozer/android/build/*.log
-            .buildozer/android/platform/*/build/*.log
+          path: .buildozer/android/buildozer.log
