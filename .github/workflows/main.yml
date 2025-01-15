@@ -26,6 +26,44 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # Cache Python dependencies
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Cache Buildozer global directory
+      - name: Cache Buildozer global
+        uses: actions/cache@v3
+        with:
+          path: ~/.buildozer
+          key: ${{ runner.os }}-buildozer-global-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-global-
+
+      # Cache Buildozer project directory
+      - name: Cache Buildozer project
+        uses: actions/cache@v3
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-project-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-project-
+
+      # Cache Android SDK and NDK
+      - name: Cache Android SDK and NDK
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${GITHUB_WORKSPACE}/android-sdk
+            ${GITHUB_WORKSPACE}/android-ndk
+          key: ${{ runner.os }}-android-sdk-ndk-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-ndk-
+
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -62,6 +100,7 @@ jobs:
             pkg-config
 
       - name: Set up Android SDK
+        if: steps.cache-android.outputs.cache-hit != 'true'
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
@@ -72,11 +111,13 @@ jobs:
           echo "PATH=${GITHUB_WORKSPACE}/android-sdk/cmdline-tools/latest/bin:${GITHUB_WORKSPACE}/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
 
       - name: Install Android SDK packages
+        if: steps.cache-android.outputs.cache-hit != 'true'
         run: |
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Download and setup Android NDK
+        if: steps.cache-android.outputs.cache-hit != 'true'
         run: |
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip android-ndk-r25b-linux.zip
@@ -86,7 +127,10 @@ jobs:
 
       - name: Create debug keystore
         run: |
-          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
 
       - name: Set environment variables
         run: |
@@ -98,10 +142,12 @@ jobs:
 
       - name: Setup python-for-android
         run: |
-          mkdir -p .buildozer/android/platform
-          git clone https://github.com/kivy/python-for-android.git .buildozer/android/platform/python-for-android
-          cd .buildozer/android/platform/python-for-android
-          python setup.py install
+          if [ ! -d .buildozer/android/platform/python-for-android ]; then
+            mkdir -p .buildozer/android/platform
+            git clone https://github.com/kivy/python-for-android.git .buildozer/android/platform/python-for-android
+            cd .buildozer/android/platform/python-for-android
+            python setup.py install
+          fi
 
       - name: Build APK
         env:
