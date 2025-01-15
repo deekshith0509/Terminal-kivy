@@ -96,14 +96,6 @@ jobs:
           sudo apt-get install -y gcc-9
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60
 
-      - name: Initialize buildozer
-        run: |
-          buildozer init
-          if [ ! -f buildozer.spec ]; then
-            echo "Failed to create buildozer.spec"
-            exit 1
-          fi
-
       - name: Setup python-for-android
         run: |
           mkdir -p .buildozer/android/platform
@@ -112,6 +104,8 @@ jobs:
           python setup.py install
 
       - name: Build APK
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
         run: |
           buildozer -v android debug
 
