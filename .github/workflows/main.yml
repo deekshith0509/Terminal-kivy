@@ -12,45 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5.3.0
-        with:
-          python-version: '3.9'
-      
-      - name: Set up Java
-        uses: actions/setup-java@v4.6.0
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      - name: Install dependencies
-        continue-on-error: true
-        run: |
-          python -m pip install --upgrade pip
-          pip install buildozer==1.5.0
-          pip install cython==0.29.33
-          pip install kivy==2.3.0
-      
+
       - name: Install system dependencies
-        continue-on-error: true
         run: |
           sudo apt-get update
-          sudo apt-get upgrade -y \
-          sudo apt install libc6-dev libstdc++-dev \
           sudo apt-get install -y \
-            python3-pip \
+            gcc \
+            g++ \
             build-essential \
-            git \
+            autoconf \
+            libtool \
+            pkg-config \
             python3-dev \
+            zlib1g-dev \
+            libncurses5-dev \
+            libgdbm-dev \
+            libnss3-dev \
+            libssl-dev \
+            libsqlite3-dev \
+            libreadline-dev \
+            libffi-dev \
+            libbz2-dev \
             ffmpeg \
             libsdl2-dev \
             libsdl2-image-dev \
@@ -60,65 +42,70 @@ jobs:
             libswscale-dev \
             libavformat-dev \
             libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0-dev \
             gstreamer1.0-plugins-{bad,base,good,ugly} \
             gstreamer1.0-{tools,x} \
-            libffi-dev \
-            libssl-dev \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
             autoconf-archive
-      
-      - name: Update autoconf
-        run: |
-          cd /tmp
-          wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
-          tar xzf autoconf-2.71.tar.gz
-          cd autoconf-2.71
-          ./configure --prefix=/usr
-          make
-          sudo make install
-      
-      - name: Install libtool
-        run: |
-          cd /tmp
-          wget https://ftp.gnu.org/gnu/libtool/libtool-2.4.7.tar.gz
-          tar xzf libtool-2.4.7.tar.gz
-          cd libtool-2.4.7
-          ./configure --prefix=/usr
-          make
-          sudo make install
-      
+
       - name: Build and install libffi
         run: |
           cd /tmp
           git clone https://github.com/libffi/libffi.git
           cd libffi
           ./autogen.sh
-          autoreconf -fiv
           ./configure --prefix=/usr --disable-docs
           make
           sudo make install
-      
+          sudo ldconfig
+
+      - name: Setup Android NDK
+        run: |
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip android-ndk-r25b-linux.zip
+          export ANDROIDNDK="$PWD/android-ndk-r25b"
+          echo "ANDROIDNDK=$ANDROIDNDK" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: '3.9'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4.6.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer==1.5.0
+          pip install cython==0.29.33
+          pip install kivy==2.3.0
+
       - name: Build APK with custom error limit
         run: |
-          # Set the CFLAGS to prevent error limit termination
+          export CC=gcc
           export CFLAGS="-ferror-limit=0"
-          buildozer android debug &> buildozer_output.log
-      
+          buildozer android debug
+
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
           path: bin/*.apk
-      
+
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_output_logs
-          path: ./*
-          
+          path: buildozer.log
