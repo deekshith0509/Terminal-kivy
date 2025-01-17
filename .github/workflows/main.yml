@@ -108,13 +108,12 @@ jobs:
           export CXXFLAGS="-fmax-errors=0"
 
       - name: Build APK
-        continue-on-error: true
         env:
           CFLAGS: "-fmax-errors=0"
           CXXFLAGS: "-fmax-errors=0"
           PYTHONWARNINGS: "ignore"
         run: |
-          python -W ignore -m buildozer android debug &> buildozer_output.log || true
+          buildozer -v android debug
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
