@@ -1,5 +1,4 @@
 name: Build APK
-
 on:
   push:
     branches:
@@ -7,24 +6,23 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
-          python-version: '3.10'  # Changed to Python 3.10
-
+          python-version: '3.10'
+      
       - name: Set up Java
         uses: actions/setup-java@v4.6.0
         with:
           distribution: 'temurin'
           java-version: '17'
-
+      
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -32,14 +30,14 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer==1.5.0  # Specify buildozer version
-          pip install cython==0.29.33   # Specify Cython version
-          pip install kivy==2.2.1       # Specify Kivy version
-
+          pip install buildozer==1.5.0
+          pip install cython==0.29.33
+          pip install kivy==2.3.0
+      
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -67,19 +65,30 @@ jobs:
             automake \
             libtool \
             pkg-config
-
+      
+      - name: Fix libffi configuration
+        run: |
+          sudo apt-get install -y autoconf-archive
+          cd /tmp
+          git clone https://github.com/libffi/libffi.git
+          cd libffi
+          ./autogen.sh
+          ./configure --prefix=/usr
+          make
+          sudo make install
+      
       - name: Build APK
         run: |
           buildozer android debug
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-
+      
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
           path: bin/*.apk
-
+      
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v3
