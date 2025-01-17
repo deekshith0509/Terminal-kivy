@@ -76,8 +76,8 @@ jobs:
           tar xzf autoconf-2.71.tar.gz
           cd autoconf-2.71
           ./configure --prefix=/usr
-          make
-          sudo make install
+          make CFLAGS="-ferror-limit=0"
+          sudo make install CFLAGS="-ferror-limit=0"
       
       - name: Install libtool
         run: |
@@ -86,8 +86,8 @@ jobs:
           tar xzf libtool-2.4.7.tar.gz
           cd libtool-2.4.7
           ./configure --prefix=/usr
-          make
-          sudo make install
+          make CFLAGS="-ferror-limit=0"
+          sudo make install CFLAGS="-ferror-limit=0"
       
       - name: Build and install libffi
         run: |
@@ -97,25 +97,39 @@ jobs:
           ./autogen.sh
           autoreconf -fiv
           ./configure --prefix=/usr --disable-docs
+          make CFLAGS="-ferror-limit=0"
+          sudo make install CFLAGS="-ferror-limit=0"
           make
           sudo make install
       
+      - name: Set Compiler Flags
+        run: |
+          export CFLAGS="-fmax-errors=0"
+          export CXXFLAGS="-fmax-errors=0"
+
       - name: Build APK
         continue-on-error: true
         env:
+          CFLAGS: "-fmax-errors=0"
+          CXXFLAGS: "-fmax-errors=0"
           PYTHONWARNINGS: "ignore"
         run: |
-          python -W ignore -m buildozer android debug || true
-
+          python -W ignore -m buildozer android debug &> buildozer_output.log || true
+          
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
-          path: bin/*.apk
-      
+          path: bin/*.apk  
+
+          
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: buildozer_logs
-          path: ./*
+          name: buildozer_output_logs
+          path: buildozer_output.log
+
+
+      
+
