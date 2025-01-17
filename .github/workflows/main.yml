@@ -64,42 +64,38 @@ jobs:
             autoconf \
             automake \
             libtool \
-            pkg-config \
-            autoconf-archive
+            pkg-config
       
-      - name: Update autoconf
+      - name: Set up buildozer.spec
         run: |
-          cd /tmp
-          wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
-          tar xzf autoconf-2.71.tar.gz
-          cd autoconf-2.71
-          ./configure --prefix=/usr
-          make
-          sudo make install
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+          sed -i 's/^android.ndk =.*/android.ndk = 25b/' buildozer.spec
+          sed -i 's/^android.ndk_path =.*/android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b/' buildozer.spec
+          sed -i 's/^android.sdk =.*/android.sdk = 33/' buildozer.spec
+          sed -i 's/^p4a.branch =.*/p4a.branch = master/' buildozer.spec
       
-      - name: Install libtool
+      - name: Create missing directories
         run: |
-          cd /tmp
-          wget https://ftp.gnu.org/gnu/libtool/libtool-2.4.7.tar.gz
-          tar xzf libtool-2.4.7.tar.gz
-          cd libtool-2.4.7
-          ./configure --prefix=/usr
-          make
-          sudo make install
+          mkdir -p $HOME/.buildozer/android/platform
+          
+      - name: Download and extract Android NDK
+        run: |
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip -q android-ndk-r25b-linux.zip -d $HOME/.buildozer/android/platform/
+          rm android-ndk-r25b-linux.zip
       
-      - name: Build and install libffi
+      - name: Set environment variables
         run: |
-          cd /tmp
-          git clone https://github.com/libffi/libffi.git
-          cd libffi
-          ./autogen.sh
-          autoreconf -fiv
-          ./configure --prefix=/usr --disable-docs
-          make
-          sudo make install
+          echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r25b" >> $GITHUB_ENV
+          echo "ANDROID_NDK=$HOME/.buildozer/android/platform/android-ndk-r25b" >> $GITHUB_ENV
+          echo "PATH=$HOME/.buildozer/android/platform/android-ndk-r25b:$PATH" >> $GITHUB_ENV
       
       - name: Build APK
         run: |
+          export PATH=$ANDROID_NDK_HOME:$PATH
+          export CFLAGS="-I$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include"
           buildozer android debug
         env:
           BUILDOZER_WARN_ON_ROOT: 0
