@@ -86,8 +86,8 @@ jobs:
           tar xzf libtool-2.4.7.tar.gz
           cd libtool-2.4.7
           ./configure --prefix=/usr
-          make CFLAGS="-ferror-limit=0"
-          sudo make install CFLAGS="-ferror-limit=0"
+          make CFLAGS="-fmax-errors=0"
+          sudo make install
       
       - name: Build and install libffi
         run: |
