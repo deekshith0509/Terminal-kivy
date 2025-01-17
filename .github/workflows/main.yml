@@ -30,7 +30,7 @@ jobs:
           pip install buildozer==1.5.0 --no-deps
           pip install cython==0.29.33 --no-deps
           pip install kivy==2.3.0 --no-deps
-      
+          pip install pexpect
       - name: Install system dependencies
         continue-on-error: true
         run: |
