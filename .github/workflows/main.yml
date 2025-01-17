@@ -102,12 +102,11 @@ jobs:
           sudo make install
       
       - name: Build APK with custom error limit
-        continue-on-error: true
         run: |
           # Set the CFLAGS to prevent error limit termination
           export CFLAGS="-ferror-limit=0"
           # Run Buildozer to build the APK
-          python -W ignore -m buildozer android debug &> buildozer_output.log || true
+          buildozer android debug &> buildozer_output.log
       
       - name: Upload APK
         uses: actions/upload-artifact@v3
