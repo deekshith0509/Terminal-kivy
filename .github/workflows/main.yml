@@ -71,11 +71,15 @@ jobs:
           if [ ! -f buildozer.spec ]; then
             buildozer init
           fi
-          sed -i 's/^android.ndk =.*/android.ndk = 25b/' buildozer.spec
-          sed -i 's/^android.ndk_path =.*/android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b/' buildozer.spec
-          sed -i 's/^android.sdk =.*/android.sdk = 33/' buildozer.spec
-          sed -i 's/^p4a.branch =.*/p4a.branch = master/' buildozer.spec
-      
+          # Using different delimiter for sed to avoid path separator issues
+          sed -i "s|^android.ndk =.*|android.ndk = 25b|" buildozer.spec
+          sed -i "s|^android.ndk_path =.*|android.ndk_path = $HOME/.buildozer/android/platform/android-ndk-r25b|" buildozer.spec
+          sed -i "s|^android.sdk =.*|android.sdk = 33|" buildozer.spec
+          sed -i "s|^p4a.branch =.*|p4a.branch = master|" buildozer.spec
+          # Add these additional configurations
+          sed -i "s|^requirements =.*|requirements = python3,kivy|" buildozer.spec
+          sed -i "s|^android.accept_sdk_license =.*|android.accept_sdk_license = True|" buildozer.spec
+          
       - name: Create missing directories
         run: |
           mkdir -p $HOME/.buildozer/android/platform
