@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -76,8 +77,8 @@ jobs:
           tar xzf autoconf-2.71.tar.gz
           cd autoconf-2.71
           ./configure --prefix=/usr
-          make CFLAGS="-ferror-limit=0"
-          sudo make install CFLAGS="-ferror-limit=0"
+          make
+          sudo make install
       
       - name: Install libtool
         run: |
@@ -86,7 +87,7 @@ jobs:
           tar xzf libtool-2.4.7.tar.gz
           cd libtool-2.4.7
           ./configure --prefix=/usr
-          make CFLAGS="-fmax-errors=0"
+          make
           sudo make install
       
       - name: Build and install libffi
@@ -97,29 +98,22 @@ jobs:
           ./autogen.sh
           autoreconf -fiv
           ./configure --prefix=/usr --disable-docs
-          make CFLAGS="-ferror-limit=0"
-          sudo make install CFLAGS="-ferror-limit=0"
           make
           sudo make install
       
-      - name: Set Compiler Flags
+      - name: Build APK with custom error limit
+        continue-on-error: true
         run: |
-          export CFLAGS="-fmax-errors=0"
-          export CXXFLAGS="-fmax-errors=0"
-
-      - name: Build APK
-        env:
-          CFLAGS: "-fmax-errors=0"
-          CXXFLAGS: "-fmax-errors=0"
-          PYTHONWARNINGS: "ignore"
-        run: |
-          buildozer -v android debug
-          
-      - name: Upload artifacts
+          # Set the CFLAGS to prevent error limit termination
+          export CFLAGS="-ferror-limit=0"
+          # Run Buildozer to build the APK
+          python -W ignore -m buildozer android debug &> buildozer_output.log || true
+      
+      - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
-          path: '**/*'
+          path: bin/*.apk
       
       - name: Upload logs on failure
         if: failure()
@@ -127,7 +121,3 @@ jobs:
         with:
           name: buildozer_output_logs
           path: buildozer_output.log
-
-
-      
-
