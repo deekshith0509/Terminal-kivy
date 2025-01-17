@@ -16,50 +16,14 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            gcc \
-            g++ \
-            build-essential \
-            autoconf \
-            libtool \
-            pkg-config \
-            python3-dev \
-            zlib1g-dev \
-            libncurses5-dev \
-            libgdbm-dev \
-            libnss3-dev \
-            libssl-dev \
-            libsqlite3-dev \
-            libreadline-dev \
-            libffi-dev \
-            libbz2-dev \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            gstreamer1.0-plugins-{bad,base,good,ugly} \
-            gstreamer1.0-{tools,x} \
-            autoconf-archive
+          sudo apt-get install -y gcc g++ build-essential autoconf libtool pkg-config python3-dev zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev libbz2-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev gstreamer1.0-plugins-{bad,base,good,ugly} gstreamer1.0-{tools,x} autoconf-archive wget unzip
 
-      - name: Build and install libffi
+      - name: Install libffi
         run: |
-          cd /tmp
-          git clone https://github.com/libffi/libffi.git
-          cd libffi
-          ./autogen.sh
-          ./configure --prefix=/usr --disable-docs
-          make
-          sudo make install
-          sudo ldconfig
+          sudo apt-get install -y libffi-dev
 
       - name: Setup Android NDK
         run: |
-          sudo apt-get install -y wget unzip
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip android-ndk-r25b-linux.zip
           export ANDROIDNDK="$PWD/android-ndk-r25b"
@@ -87,11 +51,9 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer==1.5.0
-          pip install cython==0.29.33
-          pip install kivy==2.3.0
+          pip install buildozer==1.5.0 cython==0.29.33 kivy==2.3.0
 
-      - name: Build APK with custom error limit
+      - name: Build APK
         run: |
           export CC=gcc
           export CFLAGS="-ferror-limit=0"
@@ -108,4 +70,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_output_logs
-          path: buildozer.log
+          path: ./*
