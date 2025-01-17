@@ -120,5 +120,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_output_logs
-          path: **/*
+          path: ./*
           
