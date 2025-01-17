@@ -102,9 +102,11 @@ jobs:
       
       - name: Build APK
         continue-on-error: true
+        env:
+          PYTHONWARNINGS: "ignore"
         run: |
-          python -W ignore -m buildozer -v android debug || true
-      
+          python -W ignore -m buildozer android debug || true
+
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
