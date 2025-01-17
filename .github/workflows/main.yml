@@ -116,13 +116,12 @@ jobs:
         run: |
           python -W ignore -m buildozer android debug &> buildozer_output.log || true
           
-      - name: Upload APK
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: app-debug
-          path: bin/*.apk  
-
-          
+          path: '**/*'
+      
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v3
