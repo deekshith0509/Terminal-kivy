@@ -11,44 +11,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
       - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-          
       - name: Install Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential gcc g++ zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev libbz2-dev autoconf automake
-          
+          sudo apt-get install -y build-essential gcc g++ zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev libbz2-dev autoconf automake libtool
       - name: Run autoupdate
         run: |
-          cd $GITHUB_WORKSPACE
+          # Install latest autotools
+          sudo apt-get install -y autoconf-archive
+          # Run autoupdate
           autoreconf --force --install
+          # Run autotools chain
+          ./autogen.sh || true
+          autoupdate
+          aclocal
           autoconf
-          
+          automake --add-missing
       - name: Setup Android NDK
         run: |
           wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip android-ndk-r25b-linux.zip
           export ANDROIDNDK="$PWD/android-ndk-r25b"
           echo "ANDROIDNDK=$ANDROIDNDK" >> $GITHUB_ENV
-          
       - name: Install Python packages
         run: |
           pip install buildozer==1.5.0 cython==0.29.33 kivy==2.3.0
-          
       - name: Build APK
         run: |
           buildozer android debug
-          
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
