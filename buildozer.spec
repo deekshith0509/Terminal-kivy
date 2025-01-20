@@ -17,19 +17,10 @@ source.include_patterns = bin/*
 # Use a compatible Android API level
 android.api = 33
 android.minapi = 21
-# Use specific NDK version
-android.ndk = 25b
 # Specify python-for-android version
-p4a.branch = develop
-android.sdk = 33
 android.accept_sdk_license = True
 android.archs = arm64-v8a
 
-# Add debug keystore settings
-android.keystore = debug.keystore
-android.keyalias = androiddebugkey
-android.keystore_password = android
-android.keyalias_password = android
 [buildozer]
 log_level = 2
 warn_on_root = 1
