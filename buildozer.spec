@@ -1,3 +1,4 @@
+# Updated Buildozer Spec File
 [app]
 title = Terminal Emulator
 package.name = terminal
@@ -10,16 +11,14 @@ orientation = portrait
 icon.filename = icon.png
 fullscreen = 0
 version = 1.0
+
 # Android specific settings
-android.release_artifact = apk
-android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
-source.include_patterns = bin/*
-# Use a compatible Android API level
 android.api = 33
 android.minapi = 21
-# Specify python-for-android version
-android.accept_sdk_license = True
 android.archs = arm64-v8a
+android.ndk = 25b
+android.accept_sdk_license = True
+android.permissions = MANAGE_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, INTERNET, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_AUDIO
 
 [buildozer]
 log_level = 2
