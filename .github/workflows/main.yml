@@ -43,7 +43,7 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev \
-            gdbm \
+            python3-gdbm
             libgdbm-dev \
             tk \
             libncurses5-dev \
@@ -60,12 +60,9 @@ jobs:
             python3-pip \
             python3-tk \
             nis
-          sudo apt update
-      
           # Install Python dependencies
           pip3 install --upgrade pip
           pip3 install cython buildozer
-          pip3 install gdbm
           export PATH=$PATH:~/.local/bin/
 
       - name: Install Python dependencies
