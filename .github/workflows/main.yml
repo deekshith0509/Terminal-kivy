@@ -6,9 +6,11 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-22.04-arm
+
     steps:
       - uses: actions/checkout@v3
       
@@ -65,7 +67,8 @@ jobs:
             automake \
             libtool \
             pkg-config \
-            autoconf-archive
+            autoconf-archive \
+            libunwind-dev  # Add this to resolve the unmet dependency issue
       
       - name: Update autoconf
         run: |
