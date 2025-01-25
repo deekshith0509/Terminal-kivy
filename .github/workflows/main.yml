@@ -115,4 +115,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: buildozer_logs
-          path:**/*
+          path: .
