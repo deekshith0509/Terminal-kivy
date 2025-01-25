@@ -1,80 +1,118 @@
-name: Build Android App
-
+name: Build APK
 on:
   push:
     branches:
       - main
   pull_request:
-
+    branches:
+      - main
 jobs:
-  build_android_app:
-    runs-on: ubuntu-latest
-
-    env:
-      ANDROIDNDK: ${{ github.workspace }}/android-ndk-r25b
-      BUILDOZER_WARN_ON_ROOT: 0
-      BUILD_LOG_PATH: build_logs/build.log
-
+  build:
+    runs-on: ubuntu-22.04-arm
     steps:
-      # Checkout the repository
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      # Create directories for logs and binaries
-      - name: Create Directories
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: '3.10'
+      
+      - name: Set up Java
+        uses: actions/setup-java@v4.6.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
         run: |
-          mkdir -p build_logs bin
-          touch build_logs/build.log
-
-      # Update and install dependencies
-      - name: Install Dependencies
+          python -m pip install --upgrade pip
+          pip install buildozer==1.5.0
+          pip install cython==0.29.33
+          pip install kivy==2.3.0
+      
+      - name: Install system dependencies
         run: |
-          sudo apt-get update | tee -a build_logs/build.log
-          sudo apt-get install -y build-essential wget unzip python3 python3-pip openjdk-11-jdk git | tee -a build_logs/build.log
-          sudo update-alternatives --config java <<< "2"
-
-      # Setup Python environment
-      - name: Setup Python Environment
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0-dev \
+            gstreamer1.0-plugins-{bad,base,good,ugly} \
+            gstreamer1.0-{tools,x} \
+            libffi-dev \
+            libssl-dev \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            autoconf-archive
+      
+      - name: Update autoconf
         run: |
-          python3 -m venv venv | tee -a build_logs/build.log
-          source venv/bin/activate
-          pip install --upgrade pip setuptools wheel | tee -a build_logs/build.log
-          pip install buildozer cython kivy | tee -a build_logs/build.log
-
-      # Download and setup Android NDK
-      - name: Download and Setup Android NDK
+          cd /tmp
+          wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
+          tar xzf autoconf-2.71.tar.gz
+          cd autoconf-2.71
+          ./configure --prefix=/usr
+          make
+          sudo make install
+      
+      - name: Install libtool
         run: |
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip | tee -a build_logs/build.log
-          unzip android-ndk-r25b-linux.zip | tee -a build_logs/build.log
-          export ANDROIDNDK=${{ github.workspace }}/android-ndk-r25b
-
-      # Create Buildozer config
-      - name: Configure Buildozer
+          cd /tmp
+          wget https://ftp.gnu.org/gnu/libtool/libtool-2.4.7.tar.gz
+          tar xzf libtool-2.4.7.tar.gz
+          cd libtool-2.4.7
+          ./configure --prefix=/usr
+          make
+          sudo make install
+      
+      - name: Build and install libffi
         run: |
-          mkdir -p ~/.buildozer
-          echo "root = 1" >> ~/.buildozer/config.ini
-
-      # Build APK
+          cd /tmp
+          git clone https://github.com/libffi/libffi.git
+          cd libffi
+          ./autogen.sh
+          autoreconf -fiv
+          ./configure --prefix=/usr --disable-docs
+          make
+          sudo make install
+      
       - name: Build APK
         run: |
-          set +e
-          if buildozer android debug | tee -a build_logs/build.log; then
-            echo "Build succeeded. Copying APK to bin/..."
-            cp .buildozer/android/platform/build-arm64-v8a/dists/*/build/outputs/apk/debug/*.apk bin/ || true
-          else
-            echo "Build failed. Saving logs."
-            mkdir -p build_logs_chunks
-            split -b 3M build_logs/build.log build_logs_chunks/build_log_part_
-          fi
-          set -e
-
-      # Upload Artifacts
-      - name: Upload Artifacts
+          buildozer android debug
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
+      
+      - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: build-artifacts
-          path: |
-            bin/*.apk
-            build_logs/*.log
-            build_logs_chunks/*
-          retention-days: 1
+          name: app-debug
+          path: bin/*.apk
+      
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: buildozer_logs
+          path:**/*
