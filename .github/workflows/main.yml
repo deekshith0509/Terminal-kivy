@@ -30,7 +30,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/app \
             -w /app \
-            kivy/buildozer:latest buildozer android debug
+            kivy/buildozer buildozer android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
