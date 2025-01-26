@@ -1,96 +1,42 @@
-name: Build APK
+name: CI
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [ main ]
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      # used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+        shell: bash
+
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/cache@v2
         with:
-          python-version: '3.10'
+          path: .buildozer
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libssl-dev \
-            libffi-dev \
-            build-essential \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            python3-gdbm
-            libgdbm-dev \
-            tk \
-            libncurses5-dev \
-            libncursesw5-dev \
-            cmake \
-            libffi-dev \
-            libssl-dev \
-            autoconf \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            python3-pip \
-            python3-tk \
-            nis
-          # Install Python dependencies
-          pip3 install --upgrade pip
-          pip3 install cython buildozer
-          export PATH=$PATH:~/.local/bin/
-
-      - name: Install Python dependencies
-        run: |
-          pip3 install --upgrade pip
-          pip3 install cython buildozer
-          sudo apt-get install --reinstall autoconf
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses
-
-      - name: Install Android SDK packages
-        run: |
-          sdkmanager "platforms;android-30" "build-tools;30.0.3" "platform-tools"
-
-      - name: Build APK
-        run: |
-          yes | buildozer android debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          name: Kivy-Test
-          path: bin/*
+          command: buildozer android debug
+          buildozer_version: stable
 
-      - name: Upload build logs
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         with:
-          name: All_files
-          path: .
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
