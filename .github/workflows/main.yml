@@ -9,7 +9,8 @@ jobs:
 
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       # Set up Python
       - name: Set up Python
@@ -24,8 +25,8 @@ jobs:
             python3-pip python3-setuptools python3-wheel git zip unzip openjdk-17-jdk zlib1g-dev \
             libncurses5 libffi-dev libssl-dev liblzma-dev libgdbm-dev libbz2-dev libreadline-dev \
             libsqlite3-dev libffi-dev libgdbm-compat-dev curl
-          pip install --upgrade pip setuptools cython
-          pip install buildozer
+          python3 -m pip install --upgrade pip setuptools cython
+          python3 -m pip install buildozer
 
       # Set up Android SDK and NDK
       - name: Install Android SDK and NDK
@@ -35,6 +36,13 @@ jobs:
           unzip -d ~/.buildozer/android/platform /tmp/cmdline-tools.zip
           rm /tmp/cmdline-tools.zip
           yes | ~/.buildozer/android/platform/cmdline-tools/bin/sdkmanager --sdk_root=~/.buildozer/android/platform "platform-tools" "build-tools;33.0.2" "platforms;android-33" "ndk;25.2.9519653"
+
+      # Export Java 17 as default JDK
+      - name: Set Java 17 as Default
+        run: |
+          sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+          sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
+          java -version
 
       # Initialize Buildozer (if not already initialized)
       - name: Initialize Buildozer
