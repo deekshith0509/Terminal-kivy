@@ -1,39 +1,56 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v3
 
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v3
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          python-version: '3.10'
 
-      - name: Cache Buildozer build directory
-        uses: actions/cache@v3
-        with:
-          path: .buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
-
-      - name: Pull Buildozer Docker Image
-        run: docker pull kivy/buildozer:latest
-
-      - name: Build with Buildozer
+      # Install Buildozer and dependencies
+      - name: Install Buildozer and dependencies
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -w /app \
-            kivy/buildozer buildozer android debug
+          sudo apt update && sudo apt install -y \
+            python3-pip python3-setuptools python3-wheel git zip unzip openjdk-8-jdk zlib1g-dev \
+            libncurses5 libffi-dev libssl-dev liblzma-dev libgdbm-dev libbz2-dev libreadline-dev \
+            libsqlite3-dev libffi-dev libgdbm-compat-dev curl
+          pip install --upgrade pip setuptools cython
+          pip install buildozer
 
-      - name: Upload APK Artifact
+      # Set up Android SDK and NDK
+      - name: Install Android SDK and NDK
+        run: |
+          mkdir -p ~/.buildozer/android/platform
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -d ~/.buildozer/android/platform /tmp/cmdline-tools.zip
+          rm /tmp/cmdline-tools.zip
+          yes | ~/.buildozer/android/platform/cmdline-tools/bin/sdkmanager --sdk_root=~/.buildozer/android/platform "platform-tools" "build-tools;33.0.2" "platforms;android-33" "ndk;25.2.9519653"
+
+      # Initialize Buildozer (if not already initialized)
+      - name: Initialize Buildozer
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+
+      # Build the Android APK
+      - name: Build Android APK
+        run: |
+          buildozer android debug
+
+      # Upload the APK as an artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: apk
-          path: .buildozer/android/platform/build/dists/**/build/outputs/apk/debug/*.apk
+          name: android-apk
+          path: bin/*.apk
