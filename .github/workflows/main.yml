@@ -22,11 +22,17 @@ jobs:
           path: .buildozer
           key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
 
-      - name: Build with Docker
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/app -w /app kivy/buildozer:4.1.0 buildozer android debug
+      - name: Pull Buildozer Docker Image
+        run: docker pull kivy/buildozer:latest
 
-      - name: Upload artifacts
+      - name: Build with Buildozer
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/app \
+            -w /app \
+            kivy/buildozer:latest buildozer android debug
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
         with:
           name: apk
