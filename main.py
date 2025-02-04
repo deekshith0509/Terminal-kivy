@@ -27,7 +27,7 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.behaviors import FocusBehavior
 from kivy.metrics import Metrics
-Metrics.density = 8 # Increase this for larger font scaling
+Metrics.density = 3 # Increase this for larger font scaling
 # Decorator for threaded execution
 def run_in_thread(fn):
     """Decorator to run a function in a separate thread."""
@@ -47,7 +47,7 @@ class TerminalConfig:
             'history_size': 1000,
             'scrollback_lines': 10000,
             'theme': 'dark',
-            'font_size': 14,
+            'font_size': 32,
             'aliases': {},
             'env_vars': {}
         }
@@ -636,7 +636,7 @@ class KivyConsole(BoxLayout, Shell):
     foreground_color = ListProperty((1, 1, 1, 1))
     background_color = ListProperty((0, 0, 0, 1))
     font_name = StringProperty('monospace')
-    font_size = NumericProperty(14)
+    font_size = NumericProperty(32)
     
     def __init__(self, **kwargs):
         # Initialize BoxLayout first
