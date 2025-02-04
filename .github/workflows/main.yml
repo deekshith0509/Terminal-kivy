@@ -2,9 +2,11 @@ name: CI
 on:
   push:
     branches: [main]
+    
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04  # Change to self-hosted if you need ARM
+
     steps:
       # Checkout the repository
       - name: Checkout Code
@@ -28,7 +30,7 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y \
             python3-pip python3-setuptools python3-wheel git zip unzip zlib1g-dev \
-            libncurses5 libffi-dev libssl-dev liblzma-dev libgdbm-dev libbz2-dev libreadline-dev \
+            libncurses6 libffi-dev libssl-dev liblzma-dev libgdbm-dev libbz2-dev libreadline-dev \
             libsqlite3-dev libffi-dev libgdbm-compat-dev curl
           python3 -m pip install --upgrade pip setuptools cython
           python3 -m pip install buildozer
@@ -40,6 +42,7 @@ jobs:
           wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O /tmp/cmdline-tools.zip
           unzip -d ~/.buildozer/android/platform /tmp/cmdline-tools.zip
           rm /tmp/cmdline-tools.zip
+          sudo apt-get install aidl 
           yes | ~/.buildozer/android/platform/cmdline-tools/bin/sdkmanager --sdk_root=~/.buildozer/android/platform "platform-tools" "build-tools;33.0.2" "platforms;android-33" "ndk;25.2.9519653"
       
       # Initialize Buildozer (if not already initialized)
@@ -48,7 +51,10 @@ jobs:
           if [ ! -f buildozer.spec ]; then
             buildozer init
           fi
-      
+      - name : Make Executables
+        run: |
+          sudo chmod -R +x ./bin/
+
       # Build the Android APK
       - name: Build Android APK
         run: |
@@ -56,7 +62,7 @@ jobs:
       
       # Upload the APK as an artifact
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: bin/*.apk
