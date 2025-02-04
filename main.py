@@ -26,7 +26,8 @@ from kivy.utils import platform
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.behaviors import FocusBehavior
-
+from kivy.metrics import Metrics
+Metrics.density = 8 # Increase this for larger font scaling
 # Decorator for threaded execution
 def run_in_thread(fn):
     """Decorator to run a function in a separate thread."""
@@ -756,6 +757,4 @@ def main():
         sys.exit(1)
 
 if __name__ == '__main__':
-    from kivy.metrics import Metrics
-    Metrics.density = 3  # Increase this for larger font scaling
     main()
